@@ -67,7 +67,9 @@ class _DailyTasksScreenState extends State<DailyTasksScreen> {
     if (taskName.isEmpty) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(content: Text('Informe o nome da tarefa.')));
+        ..showSnackBar(
+          const SnackBar(content: Text('Informe o nome da tarefa.')),
+        );
       return;
     }
 
@@ -105,189 +107,205 @@ class _DailyTasksScreenState extends State<DailyTasksScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: ListView(
           padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.of(context).maybePop(),
-                    icon: const Icon(
-                      Icons.arrow_back_rounded,
-                      color: AppColors.primaryText,
-                      size: 34,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      onPressed: () => Navigator.of(context).maybePop(),
+                      icon: const Icon(
+                        Icons.arrow_back_rounded,
+                        color: AppColors.primaryText,
+                        size: 34,
+                      ),
                     ),
-                  ),
-                  Text(
-                    'Tarefas Diárias',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontSize: 52 / 2,
-                      color: AppColors.primaryText,
-                      fontWeight: FontWeight.w800,
+                    Text(
+                      'Tarefas Diárias',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontSize: 52 / 2,
+                        color: AppColors.primaryText,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                  ),
-                  IconButton(
-                    onPressed: () {},
-                    icon: const Icon(
-                      Icons.more_vert_rounded,
-                      color: AppColors.primaryText,
-                      size: 34,
+                    IconButton(
+                      onPressed: () {},
+                      icon: const Icon(
+                        Icons.more_vert_rounded,
+                        color: AppColors.primaryText,
+                        size: 34,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Organize seu dia e defina prioridades',
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  fontSize: 18,
-                  color: AppColors.secondaryText,
+                  ],
                 ),
-              ),
-              const SizedBox(height: 36),
-              _SectionLabel(text: 'Nome da Tarefa'),
-              const SizedBox(height: 10),
-              _InputField(
-                controller: _taskNameController,
-                hintText: 'O que precisa ser feito?',
-                prefixIcon: Icons.assignment_rounded,
-              ),
-              const SizedBox(height: 18),
-              _SectionLabel(text: 'Descrição (Opcional)'),
-              const SizedBox(height: 10),
-              _InputField(
-                controller: _descriptionController,
-                hintText: 'Adicione mais detalhes...',
-                minLines: 4,
-                maxLines: 4,
-              ),
-              const SizedBox(height: 22),
-              _SectionLabel(text: 'Nível de Prioridade'),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: _PriorityOption(
-                       text: 'Baixa',
-                      priority: TaskPriority.low,
-                      selectedPriority: _selectedPriority,
-                      onSelected: (priority) {
-                        setState(() => _selectedPriority = priority);
-                      },
-                    ),
+                const SizedBox(height: 10),
+                Text(
+                  'Organize seu dia e defina prioridades',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    fontSize: 18,
+                    color: AppColors.secondaryText,
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _PriorityOption(
-                       text: 'Média',
-                      priority: TaskPriority.med,
-                      selectedPriority: _selectedPriority,
-                      onSelected: (priority) {
-                        setState(() => _selectedPriority = priority);
-                      },
-                    ),
+                ),
+                const SizedBox(height: 36),
+                _SectionLabel(text: 'Nome da Tarefa'),
+                const SizedBox(height: 10),
+                _InputField(
+                  controller: _taskNameController,
+                  hintText: 'O que precisa ser feito?',
+                  prefixIcon: Icons.assignment_rounded,
+                ),
+                const SizedBox(height: 18),
+                _SectionLabel(text: 'Descrição (Opcional)'),
+                const SizedBox(height: 10),
+                _InputField(
+                  controller: _descriptionController,
+                  hintText: 'Adicione mais detalhes...',
+                  minLines: 4,
+                  maxLines: 4,
+                ),
+                const SizedBox(height: 22),
+                _SectionLabel(text: 'Nível de Prioridade'),
+                const SizedBox(height: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: AppColors.border, width: 1.3),
                   ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _PriorityOption(
-                       text: 'Alta',
-                      priority: TaskPriority.high,
-                      selectedPriority: _selectedPriority,
-                      onSelected: (priority) {
-                        setState(() => _selectedPriority = priority);
-                      },
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 18),
-              SizedBox(
-                height: 72,
-                child: FilledButton.icon(
-                  onPressed: _addTask,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: const Color(0xFF0A3F84),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(36),
-                    ),
-                  ),
-                  icon: const Icon(Icons.add_rounded, size: 34),
-                  label: Text(
-                    'Adicionar Nova Tarefa',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontSize: 42 / 2,
-                      fontWeight: FontWeight.w500,
+                  child: RadioGroup<TaskPriority>(
+                    groupValue: _selectedPriority,
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setState(() => _selectedPriority = value);
+                    },
+                    child: Column(
+                      children: const [
+                        RadioListTile<TaskPriority>(
+                          value: TaskPriority.low,
+                          activeColor: AppColors.primary,
+                          title: Text(
+                            'Baixa',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        RadioListTile<TaskPriority>(
+                          value: TaskPriority.med,
+                          activeColor: AppColors.primary,
+                          title: Text(
+                            'Média',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        RadioListTile<TaskPriority>(
+                          value: TaskPriority.high,
+                          activeColor: AppColors.primary,
+                          title: Text(
+                            'Alta',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 34),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Minhas Tarefas',
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontSize: 42 / 2,
-                      color: AppColors.primaryText,
-                      fontWeight: FontWeight.w700,
+                const SizedBox(height: 18),
+                SizedBox(
+                  height: 72,
+                  child: FilledButton.icon(
+                    onPressed: _addTask,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: const Color(0xFF0A3F84),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(36),
+                      ),
                     ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: AppColors.border, width: 1.4),
-                    ),
-                    child: Text(
-                      '$_pendingCount pendentes',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: const Color(0xFF0A3F84),
-                        fontSize: 18,
+                    icon: const Icon(Icons.add_rounded, size: 34),
+                    label: Text(
+                      'Adicionar Nova Tarefa',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontSize: 42 / 2,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
                   ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              if (_tasks.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 40),
-                  child: Column(
-                    children: [
-                      const Icon(
-                        Icons.task_alt_rounded,
-                        size: 56,
-                        color: AppColors.hintText,
+                ),
+                const SizedBox(height: 34),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Minhas Tarefas',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontSize: 42 / 2,
+                        color: AppColors.primaryText,
+                        fontWeight: FontWeight.w700,
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                         'Tudo em dia!',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: AppColors.secondaryText,
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: AppColors.border, width: 1.4),
+                      ),
+                      child: Text(
+                        '$_pendingCount pendentes',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color: const Color(0xFF0A3F84),
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                    ],
-                  ),
-                )
-              else
-                for (var i = 0; i < _tasks.length; i++)
-                  _TaskCard(
-                    task: _tasks[i],
-                    onChanged: (value) => _toggleTask(i, value),
-                    onDelete: () => _removeTask(i),
-                  ),
-            ],
-          ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                if (_tasks.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 40),
+                    child: Column(
+                      children: [
+                        const Icon(
+                          Icons.task_alt_rounded,
+                          size: 56,
+                          color: AppColors.hintText,
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Tudo em dia!',
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(color: AppColors.secondaryText),
+                        ),
+                      ],
+                    ),
+                  )
+                else
+                  for (var i = 0; i < _tasks.length; i++)
+                    _TaskCard(
+                      task: _tasks[i],
+                      onChanged: (value) => _toggleTask(i, value),
+                      onDelete: () => _removeTask(i),
+                    ),
+              ],
+            ),
+          ],
         ),
       ),
     );
@@ -335,14 +353,14 @@ class _InputField extends StatelessWidget {
       maxLines: maxLines,
       style: Theme.of(context).textTheme.titleLarge?.copyWith(
         color: AppColors.primaryText,
-        fontSize: 22,
+        fontSize: 20,
         fontWeight: FontWeight.w500,
       ),
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
           color: AppColors.secondaryText,
-          fontSize: 22,
+          fontSize: 20,
           fontWeight: FontWeight.w500,
         ),
         prefixIcon: prefixIcon == null
@@ -365,64 +383,6 @@ class _InputField extends StatelessWidget {
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(26),
           borderSide: const BorderSide(color: AppColors.border, width: 1.4),
-        ),
-      ),
-    );
-  }
-}
-
-class _PriorityOption extends StatelessWidget {
-  const _PriorityOption({
-    required this.text,
-    required this.priority,
-    required this.selectedPriority,
-    required this.onSelected,
-  });
-
-  final String text;
-  final TaskPriority priority;
-  final TaskPriority selectedPriority;
-  final ValueChanged<TaskPriority> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    final isSelected = selectedPriority == priority;
-
-    return InkWell(
-      onTap: () => onSelected(priority),
-      borderRadius: BorderRadius.circular(24),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(24),
-          color: isSelected ? const Color(0xFF111831) : AppColors.surface,
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.border,
-            width: 1.4,
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              isSelected
-                  ? Icons.radio_button_checked_rounded
-                  : Icons.radio_button_off_rounded,
-              color: isSelected ? AppColors.primary : AppColors.secondaryText,
-              size: 30,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              text,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: isSelected
-                    ? AppColors.primaryText
-                    : AppColors.secondaryText,
-                fontSize: 40 / 2,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -491,7 +451,7 @@ class _TaskCard extends StatelessWidget {
                     task.description,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: AppColors.secondaryText,
-                      fontSize: 20 / 2,
+                      fontSize: 14,
                       height: 1.3,
                     ),
                   ),
@@ -512,7 +472,7 @@ class _TaskCard extends StatelessWidget {
                         visual.label,
                         style: Theme.of(context).textTheme.labelLarge?.copyWith(
                           color: visual.foreground,
-                          fontSize: 20 / 2,
+                          fontSize: 14,
                         ),
                       ),
                     ),

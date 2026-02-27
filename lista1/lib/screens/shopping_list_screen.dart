@@ -15,8 +15,14 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
 
   final List<_ShoppingItem> _items = [
     _ShoppingItem(name: 'Leite Integral 1L', addedLabel: 'Adicionado hoje'),
-    _ShoppingItem(name: 'Pao de Forma Artesanal', addedLabel: 'Adicionado hoje'),
-    _ShoppingItem(name: 'Cafe Torrado e Moido 500g', addedLabel: 'Adicionado ontem'),
+    _ShoppingItem(
+      name: 'Pao de Forma Artesanal',
+      addedLabel: 'Adicionado hoje',
+    ),
+    _ShoppingItem(
+      name: 'Cafe Torrado e Moido 500g',
+      addedLabel: 'Adicionado ontem',
+    ),
     _ShoppingItem(name: 'Arroz Agulhinha 5kg', isBought: true),
     _ShoppingItem(name: 'Detergente Neutro', isBought: true),
   ];
@@ -41,7 +47,10 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
     }
 
     setState(() {
-      _items.insert(0, _ShoppingItem(name: value, addedLabel: 'Adicionado agora'));
+      _items.insert(
+        0,
+        _ShoppingItem(name: value, addedLabel: 'Adicionado agora'),
+      );
       _itemController.clear();
     });
   }
@@ -91,6 +100,13 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.arrow_back_rounded),
+                  color: AppColors.primaryText,
+                  tooltip: 'Voltar',
+                ),
+                const SizedBox(width: 4),
                 Expanded(
                   child: Text(
                     'Lista de Compras',
@@ -118,7 +134,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
             ),
             const SizedBox(height: 30),
             Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Expanded(
                   child: TextField(
@@ -132,11 +148,12 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                     ),
                     decoration: InputDecoration(
                       hintText: 'O que voce precisa comprar?',
-                      hintStyle: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontSize: 22,
-                        color: AppColors.secondaryText,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      hintStyle: Theme.of(context).textTheme.titleLarge
+                          ?.copyWith(
+                            fontSize: 18,
+                            color: AppColors.secondaryText,
+                            fontWeight: FontWeight.w500,
+                          ),
                       prefixIcon: const Icon(
                         Icons.add_shopping_cart_rounded,
                         color: AppColors.secondaryText,
@@ -174,8 +191,8 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                 ),
                 const SizedBox(width: 14),
                 SizedBox(
-                  width: 78,
-                  height: 78,
+                  width: 48,
+                  height: 48,
                   child: Material(
                     color: AppColors.primary,
                     shape: const CircleBorder(),
@@ -185,7 +202,7 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                       child: const Icon(
                         Icons.add_rounded,
                         color: Color(0xFF0F3C7A),
-                        size: 40,
+                        size: 24,
                       ),
                     ),
                   ),
@@ -204,7 +221,10 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.secondary,
                     borderRadius: BorderRadius.circular(999),
@@ -236,13 +256,13 @@ class _ShoppingListScreenState extends State<ShoppingListScreen> {
                   const Icon(
                     Icons.task_alt_rounded,
                     color: AppColors.primaryText,
-                    size: 36,
+                    size: 28,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     'Comprado',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontSize: 21,
+                      fontSize: 24,
                       fontWeight: FontWeight.w700,
                       color: AppColors.primaryText,
                     ),
@@ -280,7 +300,9 @@ class _ShoppingCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textColor = item.isBought ? AppColors.secondaryText : AppColors.primaryText;
+    final textColor = item.isBought
+        ? AppColors.secondaryText
+        : AppColors.primaryText;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -292,28 +314,12 @@ class _ShoppingCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          InkWell(
-            onTap: onToggle,
-            borderRadius: BorderRadius.circular(999),
-            child: Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: item.isBought ? AppColors.secondaryText : AppColors.border,
-                  width: 2,
-                ),
-              ),
-              alignment: Alignment.center,
-              child: item.isBought
-                  ? const Icon(
-                      Icons.check_rounded,
-                      size: 26,
-                      color: AppColors.secondaryText,
-                    )
-                  : null,
-            ),
+          Checkbox(
+            value: item.isBought,
+            onChanged: (_) => onToggle(),
+            side: const BorderSide(color: AppColors.border, width: 2),
+            activeColor: AppColors.secondary,
+            checkColor: AppColors.primaryText,
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -326,8 +332,9 @@ class _ShoppingCard extends StatelessWidget {
                     fontSize: 22,
                     fontWeight: FontWeight.w500,
                     color: textColor,
-                    decoration:
-                        item.isBought ? TextDecoration.lineThrough : TextDecoration.none,
+                    decoration: item.isBought
+                        ? TextDecoration.lineThrough
+                        : TextDecoration.none,
                   ),
                 ),
                 if (!item.isBought) ...[
