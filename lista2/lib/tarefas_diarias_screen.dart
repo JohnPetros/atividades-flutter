@@ -110,13 +110,6 @@ class _TarefasDiariasScreenState extends State<TarefasDiariasScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: palette.accent,
-        foregroundColor: Colors.white,
-        onPressed: () {},
-        icon: const Icon(Icons.bolt_rounded),
-        label: const Text('Sugestão IA'),
-      ),
       body: SingleChildScrollView(
         padding: EdgeInsets.fromLTRB(
           spacing.md,
