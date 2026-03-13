@@ -12,9 +12,8 @@ class AgendamentoEventosScreen extends StatefulWidget {
 
 class _AgendamentoEventosScreenState extends State<AgendamentoEventosScreen> {
   final TextEditingController _tituloController = TextEditingController();
-  final TextEditingController _horarioController = TextEditingController(
-    text: '14:00',
-  );
+  final TextEditingController _horarioController = TextEditingController();
+  final TextEditingController _diaController = TextEditingController();
 
   final List<_Compromisso> _compromissos = [
     _Compromisso(
@@ -22,49 +21,28 @@ class _AgendamentoEventosScreenState extends State<AgendamentoEventosScreen> {
       titulo: 'Aula de Flutter UI',
       horario: '09:00',
       data: '01 Nov 2023',
+      dataHora: DateTime(2023, 11, 1, 9, 0),
     ),
     _Compromisso(
       id: 2,
       titulo: 'Mentoria de Projeto',
       horario: '11:30',
       data: '01 Nov 2023',
+      dataHora: DateTime(2023, 11, 1, 11, 30),
     ),
     _Compromisso(
       id: 3,
       titulo: 'Review com Cliente',
       horario: '16:00',
       data: '02 Nov 2023',
+      dataHora: DateTime(2023, 11, 2, 16, 0),
     ),
   ];
 
   int _proximoId = 4;
-  int _diaSelecionado = 1;
-  final int _diaDestaque = 7;
   String _categoriaSelecionada = 'Trabalho';
-
-  static const List<int> _diasCalendario = [
-    29,
-    30,
-    31,
-    1,
-    2,
-    3,
-    4,
-    5,
-    6,
-    7,
-    8,
-    9,
-    10,
-    11,
-    12,
-    13,
-    14,
-    15,
-    16,
-    17,
-    18,
-  ];
+  DateTime _dataSelecionada = DateTime(2023, 11, 1);
+  TimeOfDay _horarioSelecionado = const TimeOfDay(hour: 14, minute: 0);
 
   static const List<String> _categorias = [
     'Trabalho',
@@ -74,9 +52,17 @@ class _AgendamentoEventosScreenState extends State<AgendamentoEventosScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _diaController.text = _dataSelecionada.day.toString().padLeft(2, '0');
+    _horarioController.text = _formatarHorario(_horarioSelecionado);
+  }
+
+  @override
   void dispose() {
     _tituloController.dispose();
     _horarioController.dispose();
+    _diaController.dispose();
     super.dispose();
   }
 
@@ -85,6 +71,8 @@ class _AgendamentoEventosScreenState extends State<AgendamentoEventosScreen> {
     final palette = context.palette;
     final spacing = context.spacing;
     final textTheme = Theme.of(context).textTheme;
+    final compromissosOrdenados = [..._compromissos]
+      ..sort((a, b) => a.dataHora.compareTo(b.dataHora));
 
     return Scaffold(
       body: Container(
@@ -109,22 +97,24 @@ class _AgendamentoEventosScreenState extends State<AgendamentoEventosScreen> {
                 _BarraTopo(onVoltar: () => Navigator.of(context).pop()),
                 SizedBox(height: spacing.md),
                 _CardCalendario(
-                  dias: _diasCalendario,
-                  diaSelecionado: _diaSelecionado,
-                  diaDestaque: _diaDestaque,
+                  dataSelecionada: _dataSelecionada,
                   totalEventosMes: _compromissos.length,
-                  onSelecionarDia: (dia) {
+                  onSelecionarDia: (data) {
                     setState(() {
-                      _diaSelecionado = dia;
+                      _dataSelecionada = data;
+                      _diaController.text = data.day.toString().padLeft(2, '0');
                     });
                   },
                 ),
                 SizedBox(height: spacing.md),
                 _CardNovoEvento(
                   tituloController: _tituloController,
+                  diaController: _diaController,
                   horarioController: _horarioController,
                   categoriaSelecionada: _categoriaSelecionada,
                   categorias: _categorias,
+                  onSelecionarDia: _selecionarDiaDoMes,
+                  onSelecionarHorario: _selecionarHorario,
                   onCategoriaChanged: (categoria) {
                     setState(() {
                       _categoriaSelecionada = categoria;
@@ -143,14 +133,10 @@ class _AgendamentoEventosScreenState extends State<AgendamentoEventosScreen> {
                         ),
                       ),
                     ),
-                    TextButton(
-                      onPressed: () {},
-                      child: const Text('Ver Todos'),
-                    ),
                   ],
                 ),
                 SizedBox(height: spacing.sm),
-                for (final compromisso in _compromissos)
+                for (final compromisso in compromissosOrdenados)
                   Padding(
                     padding: EdgeInsets.only(bottom: spacing.sm + spacing.xs),
                     child: _CardCompromisso(
@@ -168,12 +154,13 @@ class _AgendamentoEventosScreenState extends State<AgendamentoEventosScreen> {
 
   void _confirmarAgendamento() {
     final titulo = _tituloController.text.trim();
+    final dia = _diaController.text.trim();
     final horario = _horarioController.text.trim();
 
-    if (titulo.isEmpty || horario.isEmpty) {
+    if (titulo.isEmpty || dia.isEmpty || horario.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Preencha titulo e horario para continuar.'),
+          content: Text('Preencha titulo, dia e horario para continuar.'),
         ),
       );
       return;
@@ -185,7 +172,8 @@ class _AgendamentoEventosScreenState extends State<AgendamentoEventosScreen> {
           id: _proximoId++,
           titulo: titulo,
           horario: horario,
-          data: '${_diaSelecionado.toString().padLeft(2, '0')} Nov 2023',
+          data: _formatarData(_dataSelecionada),
+          dataHora: _criarDataHora(_dataSelecionada, _horarioSelecionado),
         ),
       );
       _tituloController.clear();
@@ -203,6 +191,84 @@ class _AgendamentoEventosScreenState extends State<AgendamentoEventosScreen> {
     setState(() {
       _compromissos.removeWhere((item) => item.id == id);
     });
+  }
+
+  Future<void> _selecionarDiaDoMes() async {
+    final data = await showDatePicker(
+      context: context,
+      initialDate: _dataSelecionada,
+      firstDate: DateTime(2020, 1, 1),
+      lastDate: DateTime(2035, 12, 31),
+      initialDatePickerMode: DatePickerMode.day,
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
+      helpText: 'Selecione o dia do evento',
+      cancelText: 'Cancelar',
+      confirmText: 'Selecionar',
+    );
+
+    if (data == null) {
+      return;
+    }
+
+    setState(() {
+      _dataSelecionada = data;
+      _diaController.text = data.day.toString().padLeft(2, '0');
+    });
+  }
+
+  Future<void> _selecionarHorario() async {
+    final horario = await showTimePicker(
+      context: context,
+      initialTime: _horarioSelecionado,
+      helpText: 'Selecione o horario do evento',
+      cancelText: 'Cancelar',
+      confirmText: 'Selecionar',
+    );
+
+    if (horario == null) {
+      return;
+    }
+
+    setState(() {
+      _horarioSelecionado = horario;
+      _horarioController.text = _formatarHorario(horario);
+    });
+  }
+
+  String _formatarHorario(TimeOfDay horario) {
+    final hora = horario.hour.toString().padLeft(2, '0');
+    final minuto = horario.minute.toString().padLeft(2, '0');
+    return '$hora:$minuto';
+  }
+
+  String _formatarData(DateTime data) {
+    const meses = [
+      'Jan',
+      'Fev',
+      'Mar',
+      'Abr',
+      'Mai',
+      'Jun',
+      'Jul',
+      'Ago',
+      'Set',
+      'Out',
+      'Nov',
+      'Dez',
+    ];
+    final dia = data.day.toString().padLeft(2, '0');
+    final mes = meses[data.month - 1];
+    return '$dia $mes ${data.year}';
+  }
+
+  DateTime _criarDataHora(DateTime data, TimeOfDay horario) {
+    return DateTime(
+      data.year,
+      data.month,
+      data.day,
+      horario.hour,
+      horario.minute,
+    );
   }
 }
 
@@ -248,24 +314,23 @@ class _BarraTopo extends StatelessWidget {
 
 class _CardCalendario extends StatelessWidget {
   const _CardCalendario({
-    required this.dias,
-    required this.diaSelecionado,
-    required this.diaDestaque,
+    required this.dataSelecionada,
     required this.totalEventosMes,
     required this.onSelecionarDia,
   });
 
-  final List<int> dias;
-  final int diaSelecionado;
-  final int diaDestaque;
+  final DateTime dataSelecionada;
   final int totalEventosMes;
-  final ValueChanged<int> onSelecionarDia;
+  final ValueChanged<DateTime> onSelecionarDia;
 
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
     final spacing = context.spacing;
     final textTheme = Theme.of(context).textTheme;
+    final mesAno = _formatarMesAno(dataSelecionada);
+    final dias = _construirGradeCalendario(dataSelecionada);
+    final hoje = DateTime.now();
 
     return Container(
       width: double.infinity,
@@ -285,7 +350,7 @@ class _CardCalendario extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Novembro 2023',
+                      mesAno,
                       style: textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -330,14 +395,20 @@ class _CardCalendario extends StatelessWidget {
               childAspectRatio: 1,
             ),
             itemBuilder: (context, index) {
-              final dia = dias[index];
-              final ehMesAtual = index >= 3;
-              final selecionado = dia == diaSelecionado;
-              final destacado = dia == diaDestaque;
+              final data = dias[index];
+              final ehMesAtual = data.month == dataSelecionada.month;
+              final selecionado =
+                  data.year == dataSelecionada.year &&
+                  data.month == dataSelecionada.month &&
+                  data.day == dataSelecionada.day;
+              final destacado =
+                  data.year == hoje.year &&
+                  data.month == hoje.month &&
+                  data.day == hoje.day;
 
               return InkWell(
                 borderRadius: BorderRadius.circular(12),
-                onTap: ehMesAtual ? () => onSelecionarDia(dia) : null,
+                onTap: () => onSelecionarDia(data),
                 child: Container(
                   decoration: BoxDecoration(
                     color: selecionado
@@ -353,7 +424,7 @@ class _CardCalendario extends StatelessWidget {
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    '$dia',
+                    '${data.day}',
                     style: TextStyle(
                       color: selecionado
                           ? const Color(0xFF090909)
@@ -370,6 +441,36 @@ class _CardCalendario extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  List<DateTime> _construirGradeCalendario(DateTime referencia) {
+    final inicioDoMes = DateTime(referencia.year, referencia.month, 1);
+    final deslocamentoInicio = inicioDoMes.weekday % 7;
+    final inicioGrade = inicioDoMes.subtract(
+      Duration(days: deslocamentoInicio),
+    );
+    return List<DateTime>.generate(
+      42,
+      (index) => inicioGrade.add(Duration(days: index)),
+    );
+  }
+
+  String _formatarMesAno(DateTime data) {
+    const meses = [
+      'Janeiro',
+      'Fevereiro',
+      'Marco',
+      'Abril',
+      'Maio',
+      'Junho',
+      'Julho',
+      'Agosto',
+      'Setembro',
+      'Outubro',
+      'Novembro',
+      'Dezembro',
+    ];
+    return '${meses[data.month - 1]} ${data.year}';
   }
 }
 
@@ -400,17 +501,23 @@ class _DiaSemanaLabel extends StatelessWidget {
 class _CardNovoEvento extends StatelessWidget {
   const _CardNovoEvento({
     required this.tituloController,
+    required this.diaController,
     required this.horarioController,
     required this.categoriaSelecionada,
     required this.categorias,
+    required this.onSelecionarDia,
+    required this.onSelecionarHorario,
     required this.onCategoriaChanged,
     required this.onConfirmar,
   });
 
   final TextEditingController tituloController;
+  final TextEditingController diaController;
   final TextEditingController horarioController;
   final String categoriaSelecionada;
   final List<String> categorias;
+  final VoidCallback onSelecionarDia;
+  final VoidCallback onSelecionarHorario;
   final ValueChanged<String> onCategoriaChanged;
   final VoidCallback onConfirmar;
 
@@ -468,11 +575,13 @@ class _CardNovoEvento extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _LabelCampo(texto: 'Horario'),
+                    _LabelCampo(texto: 'Dia do mes'),
                     SizedBox(height: spacing.sm),
                     _CampoEscuro(
-                      controller: horarioController,
-                      icon: Icons.schedule_rounded,
+                      controller: diaController,
+                      icon: Icons.calendar_month_rounded,
+                      readOnly: true,
+                      onTap: onSelecionarDia,
                     ),
                   ],
                 ),
@@ -482,17 +591,26 @@ class _CardNovoEvento extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _LabelCampo(texto: 'Categoria'),
+                    _LabelCampo(texto: 'Horario'),
                     SizedBox(height: spacing.sm),
-                    _DropdownEscuro(
-                      value: categoriaSelecionada,
-                      options: categorias,
-                      onChanged: onCategoriaChanged,
+                    _CampoEscuro(
+                      controller: horarioController,
+                      icon: Icons.schedule_rounded,
+                      readOnly: true,
+                      onTap: onSelecionarHorario,
                     ),
                   ],
                 ),
               ),
             ],
+          ),
+          SizedBox(height: spacing.md),
+          _LabelCampo(texto: 'Categoria'),
+          SizedBox(height: spacing.sm),
+          _DropdownEscuro(
+            value: categoriaSelecionada,
+            options: categorias,
+            onChanged: onCategoriaChanged,
           ),
           SizedBox(height: spacing.md),
           SizedBox(
@@ -537,11 +655,15 @@ class _CampoEscuro extends StatelessWidget {
     required this.controller,
     this.hintText,
     required this.icon,
+    this.readOnly = false,
+    this.onTap,
   });
 
   final TextEditingController controller;
   final String? hintText;
   final IconData icon;
+  final bool readOnly;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -550,6 +672,8 @@ class _CampoEscuro extends StatelessWidget {
 
     return TextField(
       controller: controller,
+      readOnly: readOnly,
+      onTap: onTap,
       style: Theme.of(context).textTheme.bodyLarge,
       decoration: InputDecoration(
         hintText: hintText,
@@ -742,10 +866,12 @@ class _Compromisso {
     required this.titulo,
     required this.horario,
     required this.data,
+    required this.dataHora,
   });
 
   final int id;
   final String titulo;
   final String horario;
   final String data;
+  final DateTime dataHora;
 }

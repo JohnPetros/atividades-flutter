@@ -221,13 +221,6 @@ class _FeedbackHeader extends StatelessWidget {
                   context,
                 ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
               ),
-              SizedBox(height: spacing.xs),
-              Text(
-                'Exercicio 05 • Formulario',
-                style: Theme.of(
-                  context,
-                ).textTheme.bodyMedium?.copyWith(color: palette.secondaryText),
-              ),
             ],
           ),
         ),

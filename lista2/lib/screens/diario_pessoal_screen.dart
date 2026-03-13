@@ -12,17 +12,17 @@ class DiarioPessoalScreen extends StatefulWidget {
 class _DiarioPessoalScreenState extends State<DiarioPessoalScreen> {
   final TextEditingController _notaController = TextEditingController();
 
-  int _diaSelecionado = 24;
+  DateTime _dataSelecionada = DateTime(2023, 10, 24);
 
-  final Map<int, List<_RegistroDiario>> _registrosPorDia = {
-    22: const [
+  final Map<DateTime, List<_RegistroDiario>> _registrosPorData = {
+    DateTime(2023, 10, 22): const [
       _RegistroDiario(
         horario: '08:10',
         texto:
             'Comecei a semana revisando widgets basicos e ajustando meu cronograma.',
       ),
     ],
-    24: const [
+    DateTime(2023, 10, 24): const [
       _RegistroDiario(
         horario: '09:45',
         texto:
@@ -34,7 +34,7 @@ class _DiarioPessoalScreenState extends State<DiarioPessoalScreen> {
             'Consegui finalizar o desafio do componente de calendario! A logica de estados foi um pouco complexa mas valeu a pena.',
       ),
     ],
-    26: const [
+    DateTime(2023, 10, 26): const [
       _RegistroDiario(
         horario: '11:30',
         texto: 'Anotei ideias para melhorar o layout da tela de exercicios.',
@@ -56,11 +56,19 @@ class _DiarioPessoalScreenState extends State<DiarioPessoalScreen> {
   Widget build(BuildContext context) {
     final palette = context.palette;
     final spacing = context.spacing;
-    final registrosMes = _registrosPorDia.values.fold<int>(
+    final diaSelecionado = _dataSelecionada.day;
+    final chaveSelecionada = _normalizarData(_dataSelecionada);
+    final registrosMes = _registrosPorData.entries
+        .where((entrada) => _mesAnoIguais(entrada.key, _dataSelecionada))
+        .fold<int>(
       0,
-      (total, lista) => total + lista.length,
+      (total, entrada) => total + entrada.value.length,
     );
-    final registrosSelecionados = _registrosPorDia[_diaSelecionado] ?? const [];
+    final diasComEntrada = _registrosPorData.entries
+        .where((entrada) => _mesAnoIguais(entrada.key, _dataSelecionada))
+        .map((entrada) => entrada.key.day)
+        .toSet();
+    final registrosSelecionados = _registrosPorData[chaveSelecionada] ?? const [];
 
     return Scaffold(
       backgroundColor: palette.background,
@@ -86,21 +94,35 @@ class _DiarioPessoalScreenState extends State<DiarioPessoalScreen> {
                 _TopBar(onBack: () => Navigator.of(context).pop()),
                 SizedBox(height: spacing.md),
                 _CalendarioCard(
-                  mesTitulo: 'Outubro 2023',
+                  mesTitulo:
+                      '${_nomeMes(_dataSelecionada.month)} ${_dataSelecionada.year}',
                   entradasMes: '$registrosMes entradas este mes',
-                  diaSelecionado: _diaSelecionado,
-                  diasComEntrada: _registrosPorDia.keys.toSet(),
-                  onSelectDia: (dia) => setState(() => _diaSelecionado = dia),
+                  diaSelecionado: diaSelecionado,
+                  mesSelecionado: _dataSelecionada,
+                  diasComEntrada: diasComEntrada,
+                  onSelectDia: (dia) => setState(
+                    () => _dataSelecionada = DateTime(
+                      _dataSelecionada.year,
+                      _dataSelecionada.month,
+                      dia,
+                    ),
+                  ),
+                  onMesAnterior: _voltarMes,
+                  onMesSeguinte: _avancarMes,
+                  onAbrirCalendario: _abrirCalendario,
                 ),
                 SizedBox(height: spacing.md),
-                _DataSelecionadaHeader(diaSelecionado: _diaSelecionado),
+                _DataSelecionadaHeader(dataSelecionada: _dataSelecionada),
                 SizedBox(height: spacing.sm + spacing.xs),
                 _AreaEscritaCard(
                   controller: _notaController,
                   onSalvar: _salvarNota,
                 ),
                 SizedBox(height: spacing.md),
-                Divider(color: palette.divider.withValues(alpha: 0.8), height: 1),
+                Divider(
+                  color: palette.divider.withValues(alpha: 0.8),
+                  height: 1,
+                ),
                 SizedBox(height: spacing.md),
                 Text(
                   'Registros Anteriores',
@@ -135,16 +157,6 @@ class _DiarioPessoalScreenState extends State<DiarioPessoalScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          _notaController.clear();
-          FocusScope.of(context).requestFocus(FocusNode());
-        },
-        backgroundColor: const Color(0xFF4A8EFF),
-        foregroundColor: const Color(0xFF071222),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Nova Entrada'),
-      ),
     );
   }
 
@@ -157,13 +169,112 @@ class _DiarioPessoalScreenState extends State<DiarioPessoalScreen> {
     final agora = TimeOfDay.now();
     final horario =
         '${agora.hour.toString().padLeft(2, '0')}:${agora.minute.toString().padLeft(2, '0')}';
+    final chaveSelecionada = _normalizarData(_dataSelecionada);
 
     setState(() {
-      final lista = List<_RegistroDiario>.from(_registrosPorDia[_diaSelecionado] ?? []);
+      final lista = List<_RegistroDiario>.from(
+        _registrosPorData[chaveSelecionada] ?? [],
+      );
       lista.insert(0, _RegistroDiario(horario: horario, texto: texto));
-      _registrosPorDia[_diaSelecionado] = lista;
+      _registrosPorData[chaveSelecionada] = lista;
       _notaController.clear();
     });
+  }
+
+  Future<void> _abrirCalendario() async {
+    final dataEscolhida = await showDatePicker(
+      context: context,
+      locale: const Locale('pt', 'BR'),
+      initialDate: _dataSelecionada,
+      firstDate: DateTime(2023, 1, 1),
+      lastDate: DateTime(2030, 12, 31),
+      helpText: 'Selecionar dia',
+      cancelText: 'Cancelar',
+      confirmText: 'Selecionar',
+    );
+
+    if (!mounted || dataEscolhida == null) {
+      return;
+    }
+
+    setState(() {
+      _dataSelecionada = dataEscolhida;
+    });
+  }
+
+  void _voltarMes() {
+    setState(() {
+      final dataAnterior = DateTime(
+        _dataSelecionada.year,
+        _dataSelecionada.month - 1,
+        1,
+      );
+      final ultimoDia = DateTime(
+        dataAnterior.year,
+        dataAnterior.month + 1,
+        0,
+      ).day;
+      final diaAjustado = _dataSelecionada.day > ultimoDia
+          ? ultimoDia
+          : _dataSelecionada.day;
+
+      _dataSelecionada = DateTime(
+        dataAnterior.year,
+        dataAnterior.month,
+        diaAjustado,
+      );
+    });
+  }
+
+  void _avancarMes() {
+    setState(() {
+      final proximoMes = DateTime(
+        _dataSelecionada.year,
+        _dataSelecionada.month + 1,
+        1,
+      );
+      final ultimoDia = DateTime(
+        proximoMes.year,
+        proximoMes.month + 1,
+        0,
+      ).day;
+      final diaAjustado = _dataSelecionada.day > ultimoDia
+          ? ultimoDia
+          : _dataSelecionada.day;
+
+      _dataSelecionada = DateTime(
+        proximoMes.year,
+        proximoMes.month,
+        diaAjustado,
+      );
+    });
+  }
+
+  String _nomeMes(int mes) {
+    const meses = [
+      'Janeiro',
+      'Fevereiro',
+      'Marco',
+      'Abril',
+      'Maio',
+      'Junho',
+      'Julho',
+      'Agosto',
+      'Setembro',
+      'Outubro',
+      'Novembro',
+      'Dezembro',
+    ];
+
+    return meses[mes - 1];
+  }
+
+  DateTime _normalizarData(DateTime data) {
+    return DateTime(data.year, data.month, data.day);
+  }
+
+  bool _mesAnoIguais(DateTime a, DateTime b) {
+    return a.year == b.year && a.month == b.month;
   }
 }
 
@@ -203,22 +314,37 @@ class _CalendarioCard extends StatelessWidget {
     required this.mesTitulo,
     required this.entradasMes,
     required this.diaSelecionado,
+    required this.mesSelecionado,
     required this.diasComEntrada,
     required this.onSelectDia,
+    required this.onMesAnterior,
+    required this.onMesSeguinte,
+    required this.onAbrirCalendario,
   });
 
   final String mesTitulo;
   final String entradasMes;
   final int diaSelecionado;
+  final DateTime mesSelecionado;
   final Set<int> diasComEntrada;
   final ValueChanged<int> onSelectDia;
+  final VoidCallback onMesAnterior;
+  final VoidCallback onMesSeguinte;
+  final VoidCallback onAbrirCalendario;
 
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
     final spacing = context.spacing;
-    const dias = [22, 23, 24, 25, 26, 27, 28];
     const semanas = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sab'];
+    final primeiroDiaMes = DateTime(mesSelecionado.year, mesSelecionado.month, 1);
+    final ultimoDiaMes = DateTime(
+      mesSelecionado.year,
+      mesSelecionado.month + 1,
+      0,
+    ).day;
+    final deslocamento = primeiroDiaMes.weekday % 7;
+    final totalCelulas = ((deslocamento + ultimoDiaMes + 6) ~/ 7) * 7;
 
     return Container(
       width: double.infinity,
@@ -252,9 +378,11 @@ class _CalendarioCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const _IconSquareButton(icon: Icons.chevron_left_rounded),
+              _IconSquareButton(icon: Icons.chevron_left_rounded, onTap: onMesAnterior),
               SizedBox(width: spacing.xs),
-              const _IconSquareButton(icon: Icons.chevron_right_rounded),
+              _IconSquareButton(icon: Icons.chevron_right_rounded, onTap: onMesSeguinte),
+              SizedBox(width: spacing.xs),
+              _IconSquareButton(icon: Icons.calendar_month_rounded, onTap: onAbrirCalendario),
             ],
           ),
           SizedBox(height: spacing.md),
@@ -273,50 +401,70 @@ class _CalendarioCard extends StatelessWidget {
             ],
           ),
           SizedBox(height: spacing.sm),
-          Row(
-            children: [
-              for (final dia in dias)
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => onSelectDia(dia),
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 36,
-                          height: 36,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: dia == diaSelecionado
-                                ? const Color(0xFF4A8EFF)
-                                : Colors.transparent,
-                          ),
-                          child: Text(
-                            '$dia',
-                            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: dia == diaSelecionado
-                                  ? const Color(0xFF071222)
-                                  : palette.primaryText,
-                            ),
-                          ),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: totalCelulas,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 7,
+              mainAxisSpacing: 8,
+              crossAxisSpacing: 8,
+              childAspectRatio: 0.8,
+            ),
+            itemBuilder: (context, index) {
+              final dia = index - deslocamento + 1;
+              final foraDoMes = dia < 1 || dia > ultimoDiaMes;
+
+              if (foraDoMes) {
+                return const SizedBox.shrink();
+              }
+
+              final selecionado = dia == diaSelecionado;
+              final possuiEntrada = diasComEntrada.contains(dia);
+
+              return GestureDetector(
+                onTap: () => onSelectDia(dia),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: selecionado
+                            ? const Color(0xFF4A8EFF)
+                            : Colors.transparent,
+                        border: selecionado
+                            ? null
+                            : Border.all(color: palette.divider.withValues(alpha: 0.7)),
+                      ),
+                      child: Text(
+                        '$dia',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: selecionado
+                              ? const Color(0xFF071222)
+                              : palette.primaryText,
                         ),
-                        SizedBox(height: spacing.xs),
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: diasComEntrada.contains(dia)
-                                ? const Color(0xFF58D98F)
-                                : Colors.transparent,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
+                    SizedBox(height: spacing.xs),
+                    Container(
+                      width: 6,
+                      height: 6,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: possuiEntrada
+                            ? const Color(0xFF58D98F)
+                            : Colors.transparent,
+                      ),
+                    ),
+                  ],
                 ),
-            ],
+              );
+            },
           ),
         ],
       ),
@@ -325,9 +473,9 @@ class _CalendarioCard extends StatelessWidget {
 }
 
 class _DataSelecionadaHeader extends StatelessWidget {
-  const _DataSelecionadaHeader({required this.diaSelecionado});
+  const _DataSelecionadaHeader({required this.dataSelecionada});
 
-  final int diaSelecionado;
+  final DateTime dataSelecionada;
 
   @override
   Widget build(BuildContext context) {
@@ -337,7 +485,7 @@ class _DataSelecionadaHeader extends StatelessWidget {
       children: [
         Expanded(
           child: Text(
-            '$diaSelecionado de Outubro',
+            '${dataSelecionada.day} de ${_nomeMes(dataSelecionada.month)}',
             style: Theme.of(
               context,
             ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
@@ -362,6 +510,25 @@ class _DataSelecionadaHeader extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  String _nomeMes(int mes) {
+    const meses = [
+      'Janeiro',
+      'Fevereiro',
+      'Marco',
+      'Abril',
+      'Maio',
+      'Junho',
+      'Julho',
+      'Agosto',
+      'Setembro',
+      'Outubro',
+      'Novembro',
+      'Dezembro',
+    ];
+
+    return meses[mes - 1];
   }
 }
 
@@ -463,10 +630,7 @@ class _RegistroCard extends StatelessWidget {
             ],
           ),
           SizedBox(height: spacing.sm),
-          Text(
-            registro.texto,
-            style: Theme.of(context).textTheme.bodyLarge,
-          ),
+          Text(registro.texto, style: Theme.of(context).textTheme.bodyLarge),
         ],
       ),
     );
@@ -474,11 +638,7 @@ class _RegistroCard extends StatelessWidget {
 }
 
 class _IconSquareButton extends StatelessWidget {
-  const _IconSquareButton({
-    required this.icon,
-    this.onTap,
-    this.color,
-  });
+  const _IconSquareButton({required this.icon, this.onTap, this.color});
 
   final IconData icon;
   final VoidCallback? onTap;
@@ -496,7 +656,9 @@ class _IconSquareButton extends StatelessWidget {
         style: IconButton.styleFrom(
           backgroundColor: const Color(0xFF0F1520),
           foregroundColor: color ?? palette.primaryText,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           side: BorderSide(color: palette.divider),
         ),
         icon: Icon(icon),
